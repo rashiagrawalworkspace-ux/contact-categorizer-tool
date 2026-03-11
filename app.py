@@ -120,4 +120,8 @@ if current_db_count > 0:
     cloud_df = pd.DataFrame(list(cursor))
     
     st.sidebar.download_button(
-        label="📥 Download Labeled CSV
+        label="📥 Download Labeled CSV",
+        data=cloud_df.to_csv(index=False).encode('utf-8'),
+        file_name="final_categorized_contacts.csv",
+        mime="text/csv"
+    )
