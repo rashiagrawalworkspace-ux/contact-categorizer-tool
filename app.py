@@ -4,8 +4,6 @@ from pymongo import MongoClient
 
 # --- 1. App Configuration ---
 st.set_page_config(page_title="Contact Categorizer", page_icon="📇", layout="centered")
-
-# Custom CSS to make the radio buttons wrap nicely
 st.markdown("""<style>div.row-widget.stRadio > div { flex-direction:row; flex-wrap: wrap; gap: 10px; }</style>""", unsafe_allow_html=True)
 
 INPUT_FILE = "unknown_contacts_app.csv"
@@ -17,7 +15,6 @@ def init_connection():
 
 client = init_connection()
 db = client.CoutureDB
-# CRITICAL: We are using a NEW collection here so we don't mix with the Boss's app!
 collection = db.UnknownContactsLabeled 
 
 # --- 3. Data Loading & Smart Resume ---
@@ -40,9 +37,8 @@ st.caption(f"Progress: {st.session_state.current_idx} out of {total_contacts} co
 if st.session_state.current_idx < total_contacts:
     contact = df_input.iloc[st.session_state.current_idx]
     
-    # --- NAVIGATION BUTTONS (Placed at the top per your request) ---
+    # --- NAVIGATION BUTTONS ---
     nav_col1, nav_col2 = st.columns(2)
-    
     go_back = False
     submit_next = False
     
@@ -57,12 +53,7 @@ if st.session_state.current_idx < total_contacts:
     
     # --- DISPLAY INFO ---
     display_name = contact.get('Display Name', 'Unknown')
-    # Safely get Org Name if it exists in your CSV, otherwise ignore
-    org_name = contact.get('Organization Name', '') 
-    
     st.success(f"**👤 {display_name}**")
-    if pd.notna(org_name) and str(org_name).strip() != "":
-        st.info(f"🏢 Organization: {org_name}")
         
     st.write("---")
     
@@ -73,14 +64,23 @@ if st.session_state.current_idx < total_contacts:
         "BVRTSE", "Buddhism Group", "Stylist", "Masterji", "MAAHEIR", 
         "IIM", "Family", "Model", "LADIES WHO LEAD", "Hotshot"
     ]
-    
-    # Index 0 is "Don't know", so it defaults to this automatically
     selected_category = st.radio("Select Category:", category_options, index=0)
+    custom_category = st.text_input("✍️ Or type a custom category here (overrides radio selection):")
     
-    # --- OVERRIDE BOX ---
     st.write("---")
-    custom_category = st.text_input("✍️ Or type a custom category here (this will override the radio selection above):")
     
+    # --- NEW: ADDITIONAL DETAILS ---
+    st.markdown("**📝 Additional Details**")
+    
+    # Smart Pre-fill: If the original CSV had an Organization Name, pre-fill the box with it!
+    existing_org = str(contact.get('Organization Name', ''))
+    if existing_org.lower() == 'nan' or existing_org.lower() == 'no org provided':
+        existing_org = ""
+        
+    new_org_name = st.text_input("🏢 Organization Name", value=existing_org)
+    new_org_title = st.text_input("💼 Organization Title")
+    gender = st.radio("⚧️ Gender", ["Not sure", "M", "F"], index=0)
+
     # --- ACTION LOGIC ---
     if go_back:
         last_contact = df_input.iloc[st.session_state.current_idx - 1]
@@ -89,11 +89,15 @@ if st.session_state.current_idx < total_contacts:
         st.rerun()
         
     if submit_next:
-        # If the override box has text, use it. Otherwise, use the radio button.
         final_category = custom_category.strip() if custom_category.strip() != "" else selected_category
         
         payload = contact.to_dict()
         payload['Category'] = final_category
+        
+        # Add the new data into the payload!
+        payload['Organization Name'] = new_org_name.strip()
+        payload['Organization Title'] = new_org_title.strip()
+        payload['Gender'] = gender
         
         collection.insert_one(payload)
         st.session_state.current_idx += 1
