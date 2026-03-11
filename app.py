@@ -36,6 +36,7 @@ st.caption(f"Progress: {st.session_state.current_idx} out of {total_contacts} co
 
 if st.session_state.current_idx < total_contacts:
     contact = df_input.iloc[st.session_state.current_idx]
+    idx = st.session_state.current_idx # Using this to create unique keys for the UI
     
     # --- NAVIGATION BUTTONS ---
     nav_col1, nav_col2 = st.columns(2)
@@ -55,8 +56,9 @@ if st.session_state.current_idx < total_contacts:
     display_name = contact.get('Display Name', 'Unknown')
     st.success(f"**👤 {display_name}**")
     
-    # --- GENDER (Moved up here!) ---
-    gender = st.radio("⚧️ Gender", ["Not sure", "M", "F"], index=0)
+    # --- GENDER ---
+    # Added unique key
+    gender = st.radio("⚧️ Gender", ["Not sure", "M", "F"], index=0, key=f"gender_{idx}")
         
     st.write("---")
     
@@ -67,8 +69,9 @@ if st.session_state.current_idx < total_contacts:
         "BVRTSE", "Buddhism Group", "Stylist", "Masterji", "MAAHEIR", 
         "IIM", "Family", "Model", "LADIES WHO LEAD", "Hotshot"
     ]
-    selected_category = st.radio("Select Category:", category_options, index=0)
-    custom_category = st.text_input("✍️ Or type a custom category here (overrides radio selection):")
+    # Added unique keys to force reset
+    selected_category = st.radio("Select Category:", category_options, index=0, key=f"cat_{idx}")
+    custom_category = st.text_input("✍️ Or type a custom category here (overrides radio selection):", key=f"custom_{idx}")
     
     st.write("---")
     
@@ -79,8 +82,9 @@ if st.session_state.current_idx < total_contacts:
     if existing_org.lower() == 'nan' or existing_org.lower() == 'no org provided':
         existing_org = ""
         
-    new_org_name = st.text_input("🏢 Organization Name", value=existing_org)
-    new_org_title = st.text_input("💼 Organization Title")
+    # Added unique keys to text boxes so they wipe clean on every next click
+    new_org_name = st.text_input("🏢 Organization Name", value=existing_org, key=f"org_name_{idx}")
+    new_org_title = st.text_input("💼 Organization Title", key=f"org_title_{idx}")
 
     # --- ACTION LOGIC ---
     if go_back:
@@ -116,8 +120,4 @@ if current_db_count > 0:
     cloud_df = pd.DataFrame(list(cursor))
     
     st.sidebar.download_button(
-        label="📥 Download Labeled CSV",
-        data=cloud_df.to_csv(index=False).encode('utf-8'),
-        file_name="final_categorized_contacts.csv",
-        mime="text/csv"
-    )
+        label="📥 Download Labeled CSV
