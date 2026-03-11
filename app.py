@@ -54,6 +54,9 @@ if st.session_state.current_idx < total_contacts:
     # --- DISPLAY INFO ---
     display_name = contact.get('Display Name', 'Unknown')
     st.success(f"**👤 {display_name}**")
+    
+    # --- GENDER (Moved up here!) ---
+    gender = st.radio("⚧️ Gender", ["Not sure", "M", "F"], index=0)
         
     st.write("---")
     
@@ -69,17 +72,15 @@ if st.session_state.current_idx < total_contacts:
     
     st.write("---")
     
-    # --- NEW: ADDITIONAL DETAILS ---
-    st.markdown("**📝 Additional Details**")
+    # --- ADDITIONAL DETAILS ---
+    st.markdown("**📝 Organization Details**")
     
-    # Smart Pre-fill: If the original CSV had an Organization Name, pre-fill the box with it!
     existing_org = str(contact.get('Organization Name', ''))
     if existing_org.lower() == 'nan' or existing_org.lower() == 'no org provided':
         existing_org = ""
         
     new_org_name = st.text_input("🏢 Organization Name", value=existing_org)
     new_org_title = st.text_input("💼 Organization Title")
-    gender = st.radio("⚧️ Gender", ["Not sure", "M", "F"], index=0)
 
     # --- ACTION LOGIC ---
     if go_back:
@@ -92,12 +93,10 @@ if st.session_state.current_idx < total_contacts:
         final_category = custom_category.strip() if custom_category.strip() != "" else selected_category
         
         payload = contact.to_dict()
+        payload['Gender'] = gender
         payload['Category'] = final_category
-        
-        # Add the new data into the payload!
         payload['Organization Name'] = new_org_name.strip()
         payload['Organization Title'] = new_org_title.strip()
-        payload['Gender'] = gender
         
         collection.insert_one(payload)
         st.session_state.current_idx += 1
