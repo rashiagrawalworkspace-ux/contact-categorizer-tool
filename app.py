@@ -16,7 +16,7 @@ def init_connection():
 
 client = init_connection()
 db = client.CoutureDB
-collection = db.UnknownContactsLabeled 
+collection = db.UnknownContactsLabeled_Round2
 
 # --- 3. Data Loading & Smart Resume ---
 @st.cache_data
