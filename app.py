@@ -4,9 +4,10 @@ from pymongo import MongoClient
 
 # --- 1. App Configuration ---
 st.set_page_config(page_title="Contact Categorizer", page_icon="📇", layout="centered")
+# This custom CSS makes the radio buttons flow horizontally instead of a massive vertical list!
 st.markdown("""<style>div.row-widget.stRadio > div { flex-direction:row; flex-wrap: wrap; gap: 10px; }</style>""", unsafe_allow_html=True)
 
-INPUT_FILE = "unknown_contacts_app.csv"
+INPUT_FILE = "unlabelled_contacts_for_app_20260313_205739.csv"
 
 # --- 2. Database Connection ---
 @st.cache_resource
@@ -36,7 +37,7 @@ st.caption(f"Progress: {st.session_state.current_idx} out of {total_contacts} co
 
 if st.session_state.current_idx < total_contacts:
     contact = df_input.iloc[st.session_state.current_idx]
-    idx = st.session_state.current_idx # Using this to create unique keys for the UI
+    idx = st.session_state.current_idx # Unique keys for the UI
     
     # --- NAVIGATION BUTTONS ---
     nav_col1, nav_col2 = st.columns(2)
@@ -57,22 +58,56 @@ if st.session_state.current_idx < total_contacts:
     st.success(f"**👤 {display_name}**")
     
     # --- GENDER ---
-    # Added unique key
     gender = st.radio("⚧️ Gender", ["Not sure", "M", "F"], index=0, key=f"gender_{idx}")
         
     st.write("---")
     
-    # --- CATEGORY SELECTION ---
+    # --- CATEGORY SELECTION (RADIO + OVERRIDE) ---
     category_options = [
-        "Don't know", "Service Provider", "Client", "Enquiry", "Bridal Asia", 
-        "Procurement", "M&K", "Instagram", "Assistant", "Waters Edge", 
-        "BVRTSE", "Buddhism Group", "Stylist", "Masterji", "MAAHEIR", 
-        "IIM", "Family", "Model", "LADIES WHO LEAD", "Hotshot"
+        "Don't know", 
+        "Client", 
+        "DELETE", 
+        "Assistant", 
+        "B2B", 
+        "Service Provider", 
+        "Bridal Asia", 
+        "Family", 
+        "Hotshot", 
+        "Business", 
+        "Business Owner", 
+        "BVRTSE", 
+        "IIM", 
+        "Instagram", 
+        "M&K", 
+        "Masterji", 
+        "Model", 
+        "Procurement", 
+        "Stylist", 
+        "Waters Edge"
     ]
-    # Added unique keys to force reset
-    selected_category = st.radio("Select Category:", category_options, index=0, key=f"cat_{idx}")
-    custom_category = st.text_input("✍️ Or type a custom category here (overrides radio selection):", key=f"custom_{idx}")
     
+    selected_category = st.radio("📌 Select Category:", category_options, index=0, key=f"cat_radio_{idx}")
+    custom_category = st.text_input("✍️ Or type a custom category (overrides radio selection):", key=f"cat_text_{idx}")
+    
+    st.write("---")
+
+    # --- SERVICE TYPE SELECTION (RADIO + OVERRIDE) ---
+    service_options = [
+        "None",
+        "Event Management", 
+        "Food & Beverage", 
+        "Production", 
+        "Interior", 
+        "MUAH", 
+        "Artist", 
+        "Staff", 
+        "Business & Finance", 
+        "School Bus",
+        "Procurement"
+    ]
+    selected_service = st.radio("🛠️ Select Service Type:", service_options, index=0, key=f"srv_radio_{idx}")
+    custom_service = st.text_input("✍️ Or type a custom service type (overrides radio selection):", key=f"srv_text_{idx}")
+
     st.write("---")
     
     # --- ADDITIONAL DETAILS ---
@@ -82,7 +117,6 @@ if st.session_state.current_idx < total_contacts:
     if existing_org.lower() == 'nan' or existing_org.lower() == 'no org provided':
         existing_org = ""
         
-    # Added unique keys to text boxes so they wipe clean on every next click
     new_org_name = st.text_input("🏢 Organization Name", value=existing_org, key=f"org_name_{idx}")
     new_org_title = st.text_input("💼 Organization Title", key=f"org_title_{idx}")
 
@@ -94,11 +128,18 @@ if st.session_state.current_idx < total_contacts:
         st.rerun()
         
     if submit_next:
+        # Override logic for Category
         final_category = custom_category.strip() if custom_category.strip() != "" else selected_category
+        
+        # Override logic for Service Type
+        final_service = custom_service.strip() if custom_service.strip() != "" else selected_service
+        if final_service == "None":
+            final_service = "" # Save as blank in DB if 'None' is selected
         
         payload = contact.to_dict()
         payload['Gender'] = gender
         payload['Category'] = final_category
+        payload['Service Type'] = final_service
         payload['Organization Name'] = new_org_name.strip()
         payload['Organization Title'] = new_org_title.strip()
         
@@ -122,6 +163,6 @@ if current_db_count > 0:
     st.sidebar.download_button(
         label="📥 Download Labeled CSV",
         data=cloud_df.to_csv(index=False).encode('utf-8'),
-        file_name="final_categorized_contacts.csv",
+        file_name="final_categorized_contacts_v2.csv",
         mime="text/csv"
     )
