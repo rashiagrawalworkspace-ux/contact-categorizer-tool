@@ -31,7 +31,7 @@ if 'current_idx' not in st.session_state:
     st.session_state.current_idx = labeled_count
 
 # --- 4. The User Interface ---
-st.title("Contact Categorizer 📇")
+st.subheader("Contact Categorizer 📇")
 st.progress(st.session_state.current_idx / total_contacts if total_contacts > 0 else 0)
 st.caption(f"Progress: {st.session_state.current_idx} out of {total_contacts} completed")
 
